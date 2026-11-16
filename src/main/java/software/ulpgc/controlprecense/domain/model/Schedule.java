@@ -1,4 +1,4 @@
-package software.ulpgc.control_precense.domain.model;
+package software.ulpgc.controlprecense.domain.model;
 
 /**
  * Defines the contract for working schedules.
