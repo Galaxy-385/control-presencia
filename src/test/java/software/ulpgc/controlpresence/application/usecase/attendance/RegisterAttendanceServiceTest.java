@@ -333,6 +333,21 @@ class RegisterAttendanceServiceTest {
         }
 
         @Override
+        public List<AttendanceRecord> findByPersonIdAndDateTimeBetweenOrderByDateTime(
+                UUID personId,
+                LocalDateTime startDateTime,
+                LocalDateTime endDateTime
+        ) {
+            return records.stream()
+                    .filter(record -> record.person().id().equals(personId))
+                    .filter(record -> !record.dateTime().isBefore(startDateTime))
+                    .filter(record -> !record.dateTime().isAfter(endDateTime))
+                    .sorted((first, second) ->
+                            first.dateTime().compareTo(second.dateTime()))
+                    .toList();
+        }
+
+        @Override
         public AttendanceRecord save(AttendanceRecord record) {
             records.add(record);
             return record;
