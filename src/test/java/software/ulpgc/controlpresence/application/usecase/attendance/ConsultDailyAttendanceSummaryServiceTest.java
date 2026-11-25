@@ -12,6 +12,7 @@ import software.ulpgc.controlpresence.ports.out.PersonRepository;
 import software.ulpgc.controlpresence.ports.out.ScheduleAssignmentRepository;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -84,31 +85,25 @@ class ConsultDailyAttendanceSummaryServiceTest {
 
     @Test
     void shouldCalculateDailyAttendanceSummary() {
-        attendanceRecordRepository.save(new AttendanceRecord(
-                UUID.randomUUID(),
-                person,
+        saveAttendanceRecord(
                 workingDate.atTime(9, 0),
-                AttendanceEventType.CLOCK_IN,
-                "TEST"
-        ));
+                AttendanceEventType.CLOCK_IN
+        );
 
-        attendanceRecordRepository.save(new AttendanceRecord(
-                UUID.randomUUID(),
-                person,
+        saveAttendanceRecord(
                 workingDate.atTime(17, 0),
-                AttendanceEventType.CLOCK_OUT,
-                "TEST"
-        ));
+                AttendanceEventType.CLOCK_OUT
+        );
 
         DailyAttendanceSummary summary =
                 service.consult(person.id(), workingDate);
 
         assertEquals(workingDate, summary.date());
         assertEquals(person.id(), summary.personId());
-        assertEquals(java.time.Duration.ofHours(8), summary.scheduledTime());
-        assertEquals(java.time.Duration.ofHours(8), summary.workedTime());
-        assertEquals(java.time.Duration.ZERO, summary.lateness());
-        assertEquals(java.time.Duration.ZERO, summary.earlyDeparture());
+        assertEquals(Duration.ofHours(8), summary.scheduledTime());
+        assertEquals(Duration.ofHours(8), summary.workedTime());
+        assertEquals(Duration.ZERO, summary.lateness());
+        assertEquals(Duration.ZERO, summary.earlyDeparture());
         assertFalse(summary.absent());
         assertFalse(summary.pendingClockOut());
     }
@@ -175,10 +170,113 @@ class ConsultDailyAttendanceSummaryServiceTest {
                 service.consult(person.id(), saturday);
 
         assertEquals(saturday, summary.date());
-        assertEquals(java.time.Duration.ZERO, summary.scheduledTime());
-        assertEquals(java.time.Duration.ZERO, summary.workedTime());
+        assertEquals(Duration.ZERO, summary.scheduledTime());
+        assertEquals(Duration.ZERO, summary.workedTime());
         assertFalse(summary.absent());
         assertFalse(summary.pendingClockOut());
+    }
+
+    @Test
+    void shouldIncludeOvernightClockOutInTheDayTheShiftStarts() {
+        configureOvernightSchedule();
+
+        saveAttendanceRecord(
+                workingDate.atTime(22, 0),
+                AttendanceEventType.CLOCK_IN
+        );
+
+        saveAttendanceRecord(
+                workingDate.plusDays(1).atTime(6, 0),
+                AttendanceEventType.CLOCK_OUT
+        );
+
+        DailyAttendanceSummary summary =
+                service.consult(person.id(), workingDate);
+
+        assertEquals(workingDate, summary.date());
+        assertEquals(Duration.ofHours(8), summary.scheduledTime());
+        assertEquals(Duration.ofHours(8), summary.workedTime());
+        assertFalse(summary.absent());
+        assertFalse(summary.pendingClockOut());
+    }
+
+    @Test
+    void shouldNotCountPreviousDayClockOutAgainInNextDailySummary() {
+        configureOvernightSchedule();
+
+        saveAttendanceRecord(
+                workingDate.atTime(22, 0),
+                AttendanceEventType.CLOCK_IN
+        );
+
+        saveAttendanceRecord(
+                workingDate.plusDays(1).atTime(6, 0),
+                AttendanceEventType.CLOCK_OUT
+        );
+
+        saveAttendanceRecord(
+                workingDate.plusDays(1).atTime(22, 0),
+                AttendanceEventType.CLOCK_IN
+        );
+
+        saveAttendanceRecord(
+                workingDate.plusDays(2).atTime(6, 0),
+                AttendanceEventType.CLOCK_OUT
+        );
+
+        DailyAttendanceSummary summary =
+                service.consult(person.id(), workingDate.plusDays(1));
+
+        assertEquals(workingDate.plusDays(1), summary.date());
+        assertEquals(Duration.ofHours(8), summary.scheduledTime());
+        assertEquals(Duration.ofHours(8), summary.workedTime());
+        assertFalse(summary.absent());
+        assertFalse(summary.pendingClockOut());
+    }
+
+    private void configureOvernightSchedule() {
+        ContinuousSchedule overnightSchedule = new ContinuousSchedule(
+                UUID.randomUUID(),
+                "Overnight Schedule",
+                new TimeSlot(
+                        LocalTime.of(22, 0),
+                        LocalTime.of(6, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY,
+                        DayOfWeek.SATURDAY,
+                        DayOfWeek.SUNDAY
+                )
+        );
+
+        assignmentRepository.assignments.clear();
+
+        ScheduleAssignment overnightAssignment = new ScheduleAssignment(
+                UUID.randomUUID(),
+                person,
+                overnightSchedule,
+                workingDate.minusMonths(1),
+                Optional.empty()
+        );
+
+        assignmentRepository.save(overnightAssignment);
+    }
+
+    private void saveAttendanceRecord(
+            LocalDateTime dateTime,
+            AttendanceEventType eventType
+    ) {
+        attendanceRecordRepository.save(new AttendanceRecord(
+                UUID.randomUUID(),
+                person,
+                dateTime,
+                eventType,
+                "TEST"
+        ));
     }
 
     private static class FakePersonRepository

@@ -1,6 +1,7 @@
 
 package software.ulpgc.controlpresence.application.usecase.attendance;
 
+import software.ulpgc.controlpresence.domain.model.AttendanceEventType;
 import software.ulpgc.controlpresence.domain.model.AttendanceRecord;
 import software.ulpgc.controlpresence.domain.model.DailyAttendanceSummary;
 import software.ulpgc.controlpresence.domain.model.ScheduleAssignment;
@@ -14,6 +15,7 @@ import software.ulpgc.controlpresence.ports.out.PersonRepository;
 import software.ulpgc.controlpresence.ports.out.ScheduleAssignmentRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -79,6 +81,9 @@ public class ConsultDailyAttendanceSummaryService
     /**
      * Calculates the daily attendance summary for an existing person.
      *
+     * Attendance records are associated with the date of their clock-in.
+     * This also applies to clock-outs occurring after midnight.
+     *
      * @param personId the identifier of the person
      * @param date the date to evaluate
      * @return the calculated daily attendance summary
@@ -124,23 +129,56 @@ public class ConsultDailyAttendanceSummaryService
         List<WorkingInterval> expectedIntervals =
                 intervalCalculator.calculate(assignment.schedule(), date);
 
-        List<AttendanceRecord> attendanceRecords =
+        List<AttendanceRecord> allRecords =
                 attendanceRecordRepository
-                        .findByPersonIdOrderByDateTime(personId)
-                        .stream()
-                        .filter(record ->
-                                !record.dateTime().isBefore(date.atStartOfDay())
-                                        && record.dateTime().isBefore(
-                                        date.plusDays(1).atStartOfDay()
-                                )
-                        )
-                        .toList();
+                        .findByPersonIdOrderByDateTime(personId);
+
+        List<AttendanceRecord> dailyRecords =
+                selectRecordsForDate(allRecords, date);
 
         return attendanceCalculator.calculate(
                 personId,
                 date,
                 expectedIntervals,
-                attendanceRecords
+                dailyRecords
         );
+    }
+
+    /**
+     * Selects attendance records associated with the date of their clock-in.
+     *
+     * A clock-out belongs to the date of its preceding clock-in, even
+     * when the clock-out takes place on the following calendar day.
+     *
+     * @param records all attendance records ordered chronologically
+     * @param date the date to consult
+     * @return the records associated with the requested date
+     */
+    private List<AttendanceRecord> selectRecordsForDate(
+            List<AttendanceRecord> records,
+            LocalDate date
+    ) {
+        List<AttendanceRecord> dailyRecords = new java.util.ArrayList<>();
+
+        LocalDateTime currentClockIn = null;
+
+        for (AttendanceRecord record : records) {
+            if (record.eventType() == AttendanceEventType.CLOCK_IN) {
+                currentClockIn = record.dateTime();
+
+                if (currentClockIn.toLocalDate().equals(date)) {
+                    dailyRecords.add(record);
+                }
+            } else {
+                if (currentClockIn != null
+                        && currentClockIn.toLocalDate().equals(date)) {
+                    dailyRecords.add(record);
+                }
+
+                currentClockIn = null;
+            }
+        }
+
+        return List.copyOf(dailyRecords);
     }
 }
