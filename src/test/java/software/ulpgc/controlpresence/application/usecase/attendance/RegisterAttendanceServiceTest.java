@@ -15,16 +15,21 @@ import software.ulpgc.controlpresence.ports.out.AttendanceRecordRepository;
 import software.ulpgc.controlpresence.ports.out.PersonRepository;
 import software.ulpgc.controlpresence.ports.out.ScheduleAssignmentRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests for the RegisterAttendanceService.
+ */
 class RegisterAttendanceServiceTest {
 
     private FakePersonRepository personRepository;
@@ -41,15 +46,21 @@ class RegisterAttendanceServiceTest {
         attendanceRecordRepository = new FakeAttendanceRecordRepository();
         scheduleAssignmentRepository = new FakeScheduleAssignmentRepository();
 
+        service = new RegisterAttendanceService(
+                personRepository,
+                attendanceRecordRepository,
+                scheduleAssignmentRepository,
+                new AttendanceEventValidator(),
+                new ScheduleAssignmentService()
+        );
+
         person = new Person(
                 UUID.randomUUID(),
                 "EMP001",
                 "John Smith"
         );
 
-        dateTime = LocalDateTime.of(
-                2026, 11, 24, 9, 0
-        );
+        dateTime = LocalDateTime.of(2026, 11, 24, 9, 0);
 
         personRepository.add(person);
 
@@ -63,19 +74,18 @@ class RegisterAttendanceServiceTest {
                                 new TimeSlot(
                                         LocalTime.of(9, 0),
                                         LocalTime.of(17, 0)
+                                ),
+                                Set.of(
+                                        DayOfWeek.MONDAY,
+                                        DayOfWeek.TUESDAY,
+                                        DayOfWeek.WEDNESDAY,
+                                        DayOfWeek.THURSDAY,
+                                        DayOfWeek.FRIDAY
                                 )
                         ),
                         dateTime.toLocalDate(),
                         Optional.empty()
                 )
-        );
-
-        service = new RegisterAttendanceService(
-                personRepository,
-                attendanceRecordRepository,
-                scheduleAssignmentRepository,
-                new AttendanceEventValidator(),
-                new ScheduleAssignmentService()
         );
     }
 
@@ -176,6 +186,13 @@ class RegisterAttendanceServiceTest {
                                 new TimeSlot(
                                         LocalTime.of(9, 0),
                                         LocalTime.of(17, 0)
+                                ),
+                                Set.of(
+                                        DayOfWeek.MONDAY,
+                                        DayOfWeek.TUESDAY,
+                                        DayOfWeek.WEDNESDAY,
+                                        DayOfWeek.THURSDAY,
+                                        DayOfWeek.FRIDAY
                                 )
                         ),
                         dateTime.toLocalDate().minusDays(10),

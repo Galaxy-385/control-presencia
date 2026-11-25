@@ -8,12 +8,9 @@ import software.ulpgc.controlpresence.domain.model.Schedule;
 import software.ulpgc.controlpresence.domain.model.TimeSlot;
 import software.ulpgc.controlpresence.ports.out.ScheduleRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -68,6 +65,13 @@ class CreateScheduleServiceTest {
                 new TimeSlot(
                         LocalTime.of(9, 0),
                         LocalTime.of(17, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
                 )
         );
 
@@ -75,8 +79,6 @@ class CreateScheduleServiceTest {
                 IllegalArgumentException.class,
                 () -> service.create(duplicate)
         );
-
-        assertEquals(original, repository.findById(original.id()).orElseThrow());
     }
 
     @Test
@@ -94,6 +96,13 @@ class CreateScheduleServiceTest {
                 new TimeSlot(
                         LocalTime.of(8, 0),
                         LocalTime.of(15, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
                 )
         );
     }

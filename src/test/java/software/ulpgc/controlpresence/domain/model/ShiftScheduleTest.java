@@ -1,10 +1,11 @@
-
 package software.ulpgc.controlpresence.domain.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,20 +15,33 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ShiftScheduleTest {
 
+    private Shift createMorningShift() {
+        return new Shift(
+                UUID.randomUUID(),
+                "Morning",
+                new TimeSlot(LocalTime.of(6, 0), LocalTime.of(14, 0))
+        );
+    }
+
+    private Shift createEveningShift() {
+        return new Shift(
+                UUID.randomUUID(),
+                "Evening",
+                new TimeSlot(LocalTime.of(14, 0), LocalTime.of(22, 0))
+        );
+    }
+
+    private Map<DayOfWeek, Shift> createShiftsByDay() {
+        return Map.of(
+                DayOfWeek.MONDAY, createMorningShift(),
+                DayOfWeek.TUESDAY, createMorningShift(),
+                DayOfWeek.WEDNESDAY, createEveningShift()
+        );
+    }
+
     @Test
     void shouldCreateShiftScheduleWithValidData() {
-        List<Shift> shifts = List.of(
-                new Shift(
-                        UUID.randomUUID(),
-                        "Morning",
-                        new TimeSlot(LocalTime.of(6, 0), LocalTime.of(14, 0))
-                ),
-                new Shift(
-                        UUID.randomUUID(),
-                        "Evening",
-                        new TimeSlot(LocalTime.of(14, 0), LocalTime.of(22, 0))
-                )
-        );
+        Map<DayOfWeek, Shift> shifts = createShiftsByDay();
 
         ShiftSchedule schedule = new ShiftSchedule(
                 UUID.randomUUID(),
@@ -37,93 +51,56 @@ class ShiftScheduleTest {
 
         assertNotNull(schedule);
         assertEquals("Hospital Schedule", schedule.name());
-        assertEquals(2, schedule.shifts().size());
+        assertEquals(3, schedule.shiftsByDay().size());
+        assertEquals(shifts.get(DayOfWeek.MONDAY),
+                schedule.shiftsByDay().get(DayOfWeek.MONDAY));
     }
 
     @Test
     void shouldRejectNullId() {
         assertThrows(NullPointerException.class, () ->
-                new ShiftSchedule(
-                        null,
-                        "Hospital Schedule",
-                        List.of(new Shift(
-                                UUID.randomUUID(),
-                                "Morning",
-                                new TimeSlot(LocalTime.of(6, 0), LocalTime.of(14, 0))
-                        ))
-                )
+                new ShiftSchedule(null, "Hospital Schedule", createShiftsByDay())
         );
     }
 
     @Test
     void shouldRejectNullName() {
         assertThrows(NullPointerException.class, () ->
-                new ShiftSchedule(
-                        UUID.randomUUID(),
-                        null,
-                        List.of(new Shift(
-                                UUID.randomUUID(),
-                                "Morning",
-                                new TimeSlot(LocalTime.of(6, 0), LocalTime.of(14, 0))
-                        ))
-                )
+                new ShiftSchedule(UUID.randomUUID(), null, createShiftsByDay())
         );
     }
 
     @Test
     void shouldRejectBlankName() {
         assertThrows(IllegalArgumentException.class, () ->
-                new ShiftSchedule(
-                        UUID.randomUUID(),
-                        " ",
-                        List.of(new Shift(
-                                UUID.randomUUID(),
-                                "Morning",
-                                new TimeSlot(LocalTime.of(6, 0), LocalTime.of(14, 0))
-                        ))
-                )
+                new ShiftSchedule(UUID.randomUUID(), " ", createShiftsByDay())
         );
     }
 
     @Test
-    void shouldRejectNullShifts() {
+    void shouldRejectNullShiftsByDay() {
         assertThrows(NullPointerException.class, () ->
-                new ShiftSchedule(
-                        UUID.randomUUID(),
-                        "Hospital Schedule",
-                        null
-                )
+                new ShiftSchedule(UUID.randomUUID(), "Hospital Schedule", null)
         );
     }
 
     @Test
-    void shouldRejectEmptyShifts() {
+    void shouldRejectEmptyShiftsByDay() {
         assertThrows(IllegalArgumentException.class, () ->
-                new ShiftSchedule(
-                        UUID.randomUUID(),
-                        "Hospital Schedule",
-                        List.of()
-                )
+                new ShiftSchedule(UUID.randomUUID(), "Hospital Schedule", Map.of())
         );
     }
 
     @Test
-    void shouldCreateDefensiveCopyOfShifts() {
-        java.util.ArrayList<Shift> shifts = new java.util.ArrayList<>();
-        shifts.add(new Shift(
-                UUID.randomUUID(),
-                "Morning",
-                new TimeSlot(LocalTime.of(6, 0), LocalTime.of(14, 0))
-        ));
+    void shouldCreateDefensiveCopyOfShiftsByDay() {
+        Map<DayOfWeek, Shift> shifts = new HashMap<>(createShiftsByDay());
 
         ShiftSchedule schedule = new ShiftSchedule(
-                UUID.randomUUID(),
-                "Hospital Schedule",
-                shifts
+                UUID.randomUUID(), "Hospital Schedule", shifts
         );
 
         shifts.clear();
 
-        assertEquals(1, schedule.shifts().size());
+        assertEquals(3, schedule.shiftsByDay().size());
     }
 }

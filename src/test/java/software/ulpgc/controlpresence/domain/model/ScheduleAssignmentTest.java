@@ -3,9 +3,11 @@ package software.ulpgc.controlpresence.domain.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,7 +25,17 @@ class ScheduleAssignmentTest {
         return new ContinuousSchedule(
                 UUID.randomUUID(),
                 "Office Schedule",
-                new TimeSlot(LocalTime.of(9, 0), LocalTime.of(17, 0))
+                new TimeSlot(
+                        LocalTime.of(9, 0),
+                        LocalTime.of(17, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
+                )
         );
     }
 

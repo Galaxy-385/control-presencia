@@ -11,13 +11,10 @@ import software.ulpgc.controlpresence.ports.out.PersonRepository;
 import software.ulpgc.controlpresence.ports.out.ScheduleAssignmentRepository;
 import software.ulpgc.controlpresence.ports.out.ScheduleRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,6 +53,13 @@ class CreateScheduleAssignmentServiceTest {
                 new TimeSlot(
                         LocalTime.of(8, 0),
                         LocalTime.of(15, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
                 )
         );
 
@@ -117,6 +121,13 @@ class CreateScheduleAssignmentServiceTest {
                 new TimeSlot(
                         LocalTime.of(9, 0),
                         LocalTime.of(17, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
                 )
         );
 

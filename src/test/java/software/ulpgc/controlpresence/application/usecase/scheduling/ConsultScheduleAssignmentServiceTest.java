@@ -9,12 +9,10 @@ import software.ulpgc.controlpresence.domain.model.ScheduleAssignment;
 import software.ulpgc.controlpresence.domain.model.TimeSlot;
 import software.ulpgc.controlpresence.ports.out.ScheduleAssignmentRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,6 +42,13 @@ class ConsultScheduleAssignmentServiceTest {
                 new TimeSlot(
                         LocalTime.of(8, 0),
                         LocalTime.of(15, 0)
+                ),
+                Set.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
                 )
         );
 
