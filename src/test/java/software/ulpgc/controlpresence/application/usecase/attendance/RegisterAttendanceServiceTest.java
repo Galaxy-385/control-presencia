@@ -364,6 +364,19 @@ class RegisterAttendanceServiceTest {
         }
 
         @Override
+        public ScheduleAssignment save(ScheduleAssignment assignment) {
+            assignments.add(assignment);
+            return assignment;
+        }
+
+        @Override
+        public Optional<ScheduleAssignment> findById(UUID id) {
+            return assignments.stream()
+                    .filter(assignment -> assignment.id().equals(id))
+                    .findFirst();
+        }
+
+        @Override
         public List<ScheduleAssignment> findByPersonId(UUID personId) {
             return assignments.stream()
                     .filter(assignment ->
